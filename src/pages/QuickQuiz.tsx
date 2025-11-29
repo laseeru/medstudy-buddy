@@ -9,13 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, XCircle, Home, RefreshCw, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  explanation: string;
-}
+import { toast } from 'sonner';
+import { generateQuiz, MCQData } from '@/lib/api';
 
 type QuizState = 'setup' | 'playing' | 'results';
 
@@ -27,45 +22,32 @@ const QuickQuiz = () => {
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [isLoading, setIsLoading] = useState(false);
   const [currentTopic, setCurrentTopic] = useState('');
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questions, setQuestions] = useState<MCQData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<{ selected: string; isCorrect: boolean }[]>([]);
   const [showCurrentAnswer, setShowCurrentAnswer] = useState(false);
 
-  const generateQuiz = async (topic: string) => {
+  const handleGenerateQuiz = async (topic: string) => {
     setIsLoading(true);
     setCurrentTopic(topic);
 
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock questions - in production these would come from the AI
-    const mockQuestions: QuizQuestion[] = Array.from({ length: 5 }, (_, i) => ({
-      question: language === 'es' 
-        ? `Pregunta ${i + 1} sobre ${topic}: ¿Cuál es la respuesta correcta?`
-        : `Question ${i + 1} about ${topic}: What is the correct answer?`,
-      options: language === 'es'
-        ? [
-            'A) Primera opción de respuesta',
-            'B) Segunda opción de respuesta',
-            'C) Tercera opción de respuesta',
-            'D) Cuarta opción de respuesta',
-          ]
-        : [
-            'A) First answer option',
-            'B) Second answer option',
-            'C) Third answer option',
-            'D) Fourth answer option',
-          ],
-      correctAnswer: ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)],
-      explanation: language === 'es'
-        ? `Esta es la explicación de por qué la respuesta correcta es la indicada para la pregunta ${i + 1}.`
-        : `This is the explanation of why the correct answer is indicated for question ${i + 1}.`,
-    }));
-
-    setQuestions(mockQuestions);
-    setQuizState('playing');
-    setIsLoading(false);
+    try {
+      const quizQuestions = await generateQuiz(topic, language, 5);
+      setQuestions(quizQuestions);
+      setQuizState('playing');
+      setCurrentIndex(0);
+      setAnswers([]);
+      setShowCurrentAnswer(false);
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      toast.error(
+        language === 'es' 
+          ? 'Error al generar el cuestionario. Intenta de nuevo.'
+          : 'Error generating quiz. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAnswer = (answer: string, isCorrect: boolean) => {
@@ -119,7 +101,7 @@ const QuickQuiz = () => {
 
             <div className="bg-card rounded-xl border border-border shadow-card p-6 animate-slide-up">
               <TopicInput
-                onSubmit={generateQuiz}
+                onSubmit={handleGenerateQuiz}
                 isLoading={isLoading}
                 showDifficulty={false}
                 buttonText={t('quiz.start')}
