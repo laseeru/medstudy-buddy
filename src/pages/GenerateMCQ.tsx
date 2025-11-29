@@ -7,60 +7,41 @@ import { useScores } from '@/hooks/useScores';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface GeneratedMCQ {
-  question: string;
-  options: string[];
-  correctAnswer: string;
-  explanation: string;
-}
+import { generateMCQ, MCQData } from '@/lib/api';
 
 const GenerateMCQ = () => {
   const { t, language } = useLanguage();
-  const { saveQuestion, savedQuestions } = useScores();
+  const { saveQuestion } = useScores();
   const [isLoading, setIsLoading] = useState(false);
-  const [currentMCQ, setCurrentMCQ] = useState<GeneratedMCQ | null>(null);
+  const [currentMCQ, setCurrentMCQ] = useState<MCQData | null>(null);
   const [currentTopic, setCurrentTopic] = useState('');
-  const [currentDifficulty, setCurrentDifficulty] = useState('medium');
+  const [currentDifficulty, setCurrentDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [isSaved, setIsSaved] = useState(false);
 
-  const generateMCQ = async (topic: string, difficulty?: string) => {
+  const handleGenerateMCQ = async (topic: string, difficulty?: string) => {
     setIsLoading(true);
     setCurrentTopic(topic);
-    setCurrentDifficulty(difficulty || 'medium');
+    setCurrentDifficulty((difficulty as 'easy' | 'medium' | 'hard') || 'medium');
     setIsSaved(false);
+    setCurrentMCQ(null);
 
-    // Simulate AI generation (will be replaced with actual API call)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Mock response - in production this would come from the AI
-    const mockMCQs: { [key: string]: GeneratedMCQ } = {
-      es: {
-        question: `Sobre ${topic}: ¿Cuál de las siguientes afirmaciones es correcta?`,
-        options: [
-          'A) Primera opción de respuesta relacionada con el tema',
-          'B) Segunda opción que podría parecer correcta pero no lo es',
-          'C) Tercera opción que representa un concepto erróneo común',
-          'D) Cuarta opción que es la respuesta correcta',
-        ],
-        correctAnswer: 'D',
-        explanation: `La opción D es correcta porque representa el concepto fundamental de ${topic}. Las otras opciones contienen errores conceptuales comunes que los estudiantes suelen cometer.`,
-      },
-      en: {
-        question: `Regarding ${topic}: Which of the following statements is correct?`,
-        options: [
-          'A) First answer option related to the topic',
-          'B) Second option that might seem correct but is not',
-          'C) Third option representing a common misconception',
-          'D) Fourth option which is the correct answer',
-        ],
-        correctAnswer: 'D',
-        explanation: `Option D is correct because it represents the fundamental concept of ${topic}. The other options contain common conceptual errors that students often make.`,
-      },
-    };
-
-    setCurrentMCQ(mockMCQs[language]);
-    setIsLoading(false);
+    try {
+      const mcq = await generateMCQ(
+        topic,
+        (difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+        language
+      );
+      setCurrentMCQ(mcq);
+    } catch (error) {
+      console.error('Error generating MCQ:', error);
+      toast.error(
+        language === 'es' 
+          ? 'Error al generar la pregunta. Intenta de nuevo.'
+          : 'Error generating question. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSave = () => {
@@ -81,7 +62,7 @@ const GenerateMCQ = () => {
 
   const handleGenerateAnother = () => {
     if (currentTopic) {
-      generateMCQ(currentTopic, currentDifficulty);
+      handleGenerateMCQ(currentTopic, currentDifficulty);
     }
   };
 
@@ -101,7 +82,7 @@ const GenerateMCQ = () => {
 
         <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-8 animate-slide-up">
           <TopicInput
-            onSubmit={generateMCQ}
+            onSubmit={handleGenerateMCQ}
             isLoading={isLoading}
             showDifficulty={true}
             buttonText={t('mcq.generate')}

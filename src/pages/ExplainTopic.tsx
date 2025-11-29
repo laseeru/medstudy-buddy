@@ -5,14 +5,8 @@ import { TopicInput } from '@/components/TopicInput';
 import { ExplanationCard } from '@/components/ExplanationCard';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
-
-interface ExplanationData {
-  definition: string;
-  clinicalFeatures: string;
-  diagnosis: string;
-  treatment: string;
-  lowResourceConsiderations: string;
-}
+import { toast } from 'sonner';
+import { explainTopic, ExplanationData } from '@/lib/api';
 
 const ExplainTopic = () => {
   const { t, language } = useLanguage();
@@ -20,33 +14,24 @@ const ExplainTopic = () => {
   const [currentTopic, setCurrentTopic] = useState('');
   const [explanation, setExplanation] = useState<ExplanationData | null>(null);
 
-  const explainTopic = async (topic: string) => {
+  const handleExplainTopic = async (topic: string) => {
     setIsLoading(true);
     setCurrentTopic(topic);
+    setExplanation(null);
 
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock explanation - in production this would come from the AI
-    const mockExplanations: { [key: string]: ExplanationData } = {
-      es: {
-        definition: `${topic} es una condición médica caracterizada por cambios patológicos específicos. Esta definición abarca los aspectos fundamentales de la enfermedad y su impacto en el organismo.`,
-        clinicalFeatures: `Los pacientes con ${topic} típicamente presentan:\n• Síntoma principal característico\n• Signos clínicos asociados\n• Manifestaciones sistémicas comunes\n• Complicaciones potenciales a largo plazo`,
-        diagnosis: `El diagnóstico de ${topic} se basa en:\n• Historia clínica detallada\n• Examen físico completo\n• Estudios de laboratorio específicos\n• Imagenología cuando está indicada`,
-        treatment: `El manejo de ${topic} incluye:\n• Tratamiento de primera línea\n• Opciones terapéuticas alternativas\n• Monitoreo y seguimiento\n• Educación al paciente`,
-        lowResourceConsiderations: `En entornos de recursos limitados:\n• Priorizar diagnóstico clínico\n• Utilizar medicamentos esenciales disponibles\n• Implementar seguimiento comunitario\n• Considerar referencias oportunas cuando sea necesario`,
-      },
-      en: {
-        definition: `${topic} is a medical condition characterized by specific pathological changes. This definition encompasses the fundamental aspects of the disease and its impact on the body.`,
-        clinicalFeatures: `Patients with ${topic} typically present with:\n• Main characteristic symptom\n• Associated clinical signs\n• Common systemic manifestations\n• Potential long-term complications`,
-        diagnosis: `Diagnosis of ${topic} is based on:\n• Detailed clinical history\n• Complete physical examination\n• Specific laboratory studies\n• Imaging when indicated`,
-        treatment: `Management of ${topic} includes:\n• First-line treatment\n• Alternative therapeutic options\n• Monitoring and follow-up\n• Patient education`,
-        lowResourceConsiderations: `In low-resource settings:\n• Prioritize clinical diagnosis\n• Use available essential medications\n• Implement community follow-up\n• Consider timely referrals when necessary`,
-      },
-    };
-
-    setExplanation(mockExplanations[language]);
-    setIsLoading(false);
+    try {
+      const data = await explainTopic(topic, language);
+      setExplanation(data);
+    } catch (error) {
+      console.error('Error explaining topic:', error);
+      toast.error(
+        language === 'es' 
+          ? 'Error al explicar el tema. Intenta de nuevo.'
+          : 'Error explaining topic. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleExplainAnother = () => {
@@ -71,7 +56,7 @@ const ExplainTopic = () => {
         {!explanation && (
           <div className="bg-card rounded-xl border border-border shadow-card p-6 animate-slide-up">
             <TopicInput
-              onSubmit={explainTopic}
+              onSubmit={handleExplainTopic}
               isLoading={isLoading}
               showDifficulty={false}
               placeholder={t('explain.placeholder')}
