@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Eye, Save, Check } from 'lucide-react';
+import { CheckCircle2, XCircle, Eye, Save, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface MCQCardProps {
   question: string;
@@ -32,6 +33,7 @@ export function MCQCard({
   const { t } = useLanguage();
   const [internalSelectedAnswer, setInternalSelectedAnswer] = useState<string | null>(null);
   const [internalShowResult, setInternalShowResult] = useState(false);
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
 
   const selectedAnswer = externalSelectedAnswer !== undefined ? externalSelectedAnswer : internalSelectedAnswer;
   const showResult = externalShowResult !== undefined ? externalShowResult : internalShowResult;
@@ -51,10 +53,15 @@ export function MCQCard({
     setInternalShowResult(true);
   };
 
+  const handleFeedback = (type: 'up' | 'down') => {
+    setFeedback(type);
+    toast.success(t('feedback.thanks') || "Thanks for your feedback!");
+  };
+
   const isCorrect = selectedAnswer === correctAnswer;
 
   return (
-    <div className="bg-gradient-card rounded-xl border border-border shadow-card p-6 animate-scale-in">
+    <div className="bg-gradient-card rounded-xl border border-border shadow-card p-6 animate-scale-in transition-colors duration-300">
       <p className="text-lg font-medium text-foreground mb-6 leading-relaxed">
         {question}
       </p>
@@ -68,14 +75,14 @@ export function MCQCard({
           let optionStyle = 'border-border hover:border-primary/50 hover:bg-muted/50';
           if (showResult) {
             if (isCorrectOption) {
-              optionStyle = 'border-success bg-success/10 text-success';
+              optionStyle = 'border-success bg-success/10 text-success dark:bg-success/20';
             } else if (isSelected && !isCorrectOption) {
-              optionStyle = 'border-destructive bg-destructive/10 text-destructive';
+              optionStyle = 'border-destructive bg-destructive/10 text-destructive dark:bg-destructive/20';
             } else {
               optionStyle = 'border-border opacity-60';
             }
           } else if (isSelected) {
-            optionStyle = 'border-primary bg-primary/10';
+            optionStyle = 'border-primary bg-primary/10 dark:bg-primary/20';
           }
 
           return (
@@ -116,41 +123,66 @@ export function MCQCard({
       {showResult && (
         <div className="space-y-4 animate-slide-up">
           <div className={cn(
-            'p-4 rounded-lg',
-            isCorrect ? 'bg-success/10 border border-success/30' : 'bg-destructive/10 border border-destructive/30'
+            'p-4 rounded-lg transition-colors duration-300',
+            isCorrect 
+              ? 'bg-success/10 border border-success/30 dark:bg-success/20' 
+              : 'bg-destructive/10 border border-destructive/30 dark:bg-destructive/20'
           )}>
             <p className="font-medium mb-1">
               {t('mcq.correctAnswer')}: <span className="text-primary">{correctAnswer}</span>
             </p>
           </div>
           
-          <div className="p-4 rounded-lg bg-muted/50 border border-border">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border transition-colors duration-300">
             <p className="text-sm font-medium text-muted-foreground mb-2">{t('mcq.explanation')}</p>
             <p className="text-foreground leading-relaxed">{explanation}</p>
           </div>
-        </div>
-      )}
 
-      {showResult && onSave && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <Button
-            onClick={onSave}
-            disabled={isSaved}
-            variant={isSaved ? 'outline' : 'default'}
-            size="sm"
-          >
-            {isSaved ? (
-              <>
-                <Check className="h-4 w-4 mr-2" />
-                {t('mcq.saved')}
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {t('mcq.save')}
-              </>
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+             <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleFeedback('up')}
+                  className={cn("h-8 px-2", feedback === 'up' && "text-primary bg-primary/10")}
+                  disabled={!!feedback}
+                >
+                  <ThumbsUp className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Helpful</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleFeedback('down')}
+                  className={cn("h-8 px-2", feedback === 'down' && "text-destructive bg-destructive/10")}
+                  disabled={!!feedback}
+                >
+                  <ThumbsDown className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Not helpful</span>
+                </Button>
+             </div>
+
+            {onSave && (
+              <Button
+                onClick={onSave}
+                disabled={isSaved}
+                variant={isSaved ? 'outline' : 'default'}
+                size="sm"
+              >
+                {isSaved ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    {t('mcq.saved')}
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {t('mcq.save')}
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
       )}
     </div>

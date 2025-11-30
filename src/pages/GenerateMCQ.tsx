@@ -5,6 +5,7 @@ import { TopicInput } from '@/components/TopicInput';
 import { MCQCard } from '@/components/MCQCard';
 import { useScores } from '@/hooks/useScores';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateMCQ, MCQData } from '@/lib/api';
@@ -67,7 +68,7 @@ const GenerateMCQ = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-hero transition-colors duration-300">
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-2xl">
@@ -80,7 +81,7 @@ const GenerateMCQ = () => {
           </p>
         </div>
 
-        <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-8 animate-slide-up">
+        <div className="bg-card rounded-xl border border-border shadow-card p-6 mb-8 animate-slide-up transition-colors duration-300">
           <TopicInput
             onSubmit={handleGenerateMCQ}
             isLoading={isLoading}
@@ -90,7 +91,18 @@ const GenerateMCQ = () => {
           />
         </div>
 
-        {currentMCQ && (
+        {isLoading && (
+          <div className="bg-card rounded-xl border border-border shadow-card p-6 space-y-6 animate-pulse">
+            <Skeleton className="h-8 w-3/4" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isLoading && currentMCQ && (
           <div className="space-y-4">
             <MCQCard
               question={currentMCQ.question}

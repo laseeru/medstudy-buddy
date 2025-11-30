@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { TopicInput } from '@/components/TopicInput';
 import { ExplanationCard } from '@/components/ExplanationCard';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { explainTopic, ExplanationData } from '@/lib/api';
@@ -40,7 +41,7 @@ const ExplainTopic = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-hero transition-colors duration-300">
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-2xl">
@@ -54,7 +55,7 @@ const ExplainTopic = () => {
         </div>
 
         {!explanation && (
-          <div className="bg-card rounded-xl border border-border shadow-card p-6 animate-slide-up">
+          <div className="bg-card rounded-xl border border-border shadow-card p-6 animate-slide-up transition-colors duration-300">
             <TopicInput
               onSubmit={handleExplainTopic}
               isLoading={isLoading}
@@ -63,6 +64,20 @@ const ExplainTopic = () => {
               buttonText={t('explain.button')}
               loadingText={t('explain.explaining')}
             />
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="mt-6 bg-card rounded-xl border border-border shadow-card p-6 space-y-6 animate-pulse">
+            <div className="flex items-center gap-4 mb-6">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-3/4" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
           </div>
         )}
 
